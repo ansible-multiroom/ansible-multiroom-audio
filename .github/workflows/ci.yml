@@ -15,7 +15,7 @@ jobs:
     name: Molecule Test (${{ github.actor == 'dependabot[bot]' && 'Github' || 'Hifiberry' }})
     if: |
       github.event_name == 'push' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name == 'pull_request'
     runs-on: >-
       ${{ github.actor == 'dependabot[bot]' && 'ubuntu-latest' ||
           fromJSON('["self-hosted", "linux", "ARM64", "hifiberry"]') }}
