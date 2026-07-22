@@ -1,0 +1,20 @@
+---
+
+platforms:
+  - name: test-snapclient
+    groups:
+      - amsel_all
+    image: "${MOLECULE_IMAGE:-geerlingguy/docker-debian12-ansible:latest}"
+    command: "${MOLECULE_COMMAND:-/lib/systemd/systemd}"
+    override_command: false
+    cgroupns_mode: host
+    network_mode: "${PLATFORMS_NETWORK_MODE:-bridge}"
+    privileged: ${PLATFORMS_PRIVILEGED:-false}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - "${PLATFORMS_SND_DEV_PATH:-/tmp/dummy-snd}:/dev/snd:rw"
+      - "${PLATFORMS_SYSTEM_DBUS_SOCKET:-/tmp/dummy-dbus}:/var/run/dbus/system_bus_socket:rw"
+    tmpfs:
+      - /run
+      - /tmp
+      - /run/lock

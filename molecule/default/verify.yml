@@ -1,0 +1,5 @@
+---
+
+- name: Import snapclient
+  ansible.builtin.import_playbook: verify_snapclient.yml
+  when: lookup('env', 'MOLECULE_TAG') | default('molecule::snapclient', true) == 'molecule::snapclient'

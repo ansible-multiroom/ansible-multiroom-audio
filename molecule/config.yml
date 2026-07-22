@@ -1,0 +1,20 @@
+---
+driver:
+  name: docker
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      roles_path: ../../roles
+  ansible_args:
+    - "--skip-tags"
+    - "${PROVISIONER_SKIP_TAGS:-hifiberry-only}"
+  inventory:
+    links:
+      group_vars: ../../group_vars
+  env:
+    ANSIBLE_FORCE_COLOR: "True"
+dependency:
+  name: galaxy
+verifier:
+  name: ansible

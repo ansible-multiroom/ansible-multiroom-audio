@@ -5,6 +5,8 @@
     name: "snapclient@{{ item.name }}.service"
     daemon_reload: yes
     state: restarted
+    masked: no
+    enabled: yes
   loop: "{{ snapclient_config }}"
   loop_control:
     label: "{{ item.name }}"

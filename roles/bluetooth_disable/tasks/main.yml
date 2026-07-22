@@ -1,10 +1,15 @@
 ---
 
+- name: Install rfkill package
+  ansible.builtin.apt:
+    name: rfkill
+
 - name: Get rfkill bluetooth status
   ansible.builtin.command:
     cmd: rfkill list bluetooth -n -o SOFT
   register: bluetoothstatus
   changed_when: false
+  tags: hifiberry-only
 
 - name: Show bluetoothstatus
   ansible.builtin.debug:
@@ -14,3 +19,4 @@
   ansible.builtin.shell:
     cmd: rfkill block bluetooth
   when: bluetoothstatus.stdout != "blocked"
+  tags: hifiberry-only

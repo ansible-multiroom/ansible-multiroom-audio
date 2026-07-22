@@ -1,0 +1,3 @@
+---
+- name: Execute multiroom-amsel playbook
+  ansible.builtin.import_playbook: ../../multiroom-amsel.yml

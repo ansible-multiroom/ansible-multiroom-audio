@@ -1,0 +1,67 @@
+---
+- name: Verify base and snapclient installation
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Load default variables defined in base role
+      ansible.builtin.include_vars:
+        file: ../../roles/base/defaults/main.yml
+    - name: Render asound.conf locally
+      ansible.builtin.template:
+        src: ../../roles/base/templates/etc/asound.conf.j2
+        dest: /tmp/asound.conf_expected
+      delegate_to: localhost
+      run_once: true
+    - name: Compute checksum of local asound.conf
+      ansible.builtin.stat:
+        path: /tmp/asound.conf_expected
+        checksum_algorithm: sha256
+      delegate_to: localhost
+      register: asound_conf_expected
+      run_once: true
+    - name: Compute checksum of container asound.conf
+      ansible.builtin.stat:
+        path: /etc/asound.conf
+        checksum_algorithm: sha256
+      register: asound_conf_container
+    - name: Assert that asound.conf has been created correctly
+      ansible.builtin.assert:
+        that:
+          - asound_conf_container.stat.exists
+          - asound_conf_container.stat.checksum == asound_conf_expected.stat.checksum
+        fail_msg: "/etc/asound.conf has not been created correctly"
+    - name: Render snapclient scripts locally
+      ansible.builtin.template:
+        src: ../../roles/snapclient/templates/etc/snapclient.conf.d/snapclient.j2
+        dest: "/tmp/snapclient_{{ item.name }}_expected"
+      loop: "{{ snapclient_config }}"
+      delegate_to: localhost
+      run_once: true
+    - name: Compute checksum of local snapclient scripts
+      ansible.builtin.stat:
+        path: "/tmp/snapclient_{{ item.name }}_expected"
+        checksum_algorithm: sha256
+      loop: "{{ snapclient_config }}"
+      delegate_to: localhost
+      register: snapclient_scripts_expected
+      run_once: true
+    - name: Compute checksum of container snapclient scripts
+      ansible.builtin.stat:
+        path: "/etc/snapclient.conf.d/{{ item.name }}.conf"
+        checksum_algorithm: sha256
+      loop: "{{ snapclient_config }}"
+      register: snapclient_scripts_container
+    - name: Assert that snapclient scripts have been created correctly
+      ansible.builtin.assert:
+        that:
+          - container_file.stat.exists == true
+          - expected_file.stat.exists == true
+          - container_file.stat.checksum == expected_file.stat.checksum
+        fail_msg: The file /etc/snapclient.conf.d/{{ item.name }}.conf has not been created correctly
+        quiet: true
+      loop: "{{ snapclient_config }}"
+      loop_control:
+        label: "{{ item.name }}"
+      vars:
+        container_file: "{{ (snapclient_scripts_container.results | selectattr('item.name', 'equalto', item.name) | first) }}"
+        expected_file: "{{ (snapclient_scripts_expected.results | selectattr('item.name', 'equalto', item.name) | first) }}"

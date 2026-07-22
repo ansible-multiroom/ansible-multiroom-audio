@@ -63,11 +63,24 @@
 - name: Populate service facts
   ansible.builtin.service_facts:
 
-- name: Get list of stopped/running snapclient@ services from ansible_facts.services
+- name: Create raw list of stopped/running snapclient@ services from ansible_facts.services
   ansible.builtin.set_fact:
-    snapclientservices: "{{ snapclientservices | default ([]) + [ item.value.name ] }}"
-  loop: "{{ ansible_facts.services | dict2items }}"
-  when: item.value.name is match('snapclient@') and ( item.value.state == 'running' or item.value.state == 'stopped' )
+    snapclientservices_raw: "{{ snapclientservices_raw | default([]) + [ item.value ] }}"
+  loop: >-
+    {{ ansible_facts.services | dict2items
+       | selectattr('value.name', 'match', 'snapclient@')
+       | selectattr('value.state', 'in', ['running', 'stopped']) | list
+    }}
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Notify handler when there is at least one stopped snapclient@ service
+  ansible.builtin.debug:
+    msg: "There is at least one stopped snapclient@ service, triggering handler"
+  changed_when: true
+  notify: Restart snapclients
+  when: (snapclientservices_raw | default([]) | selectattr('state', 'equalto', 'stopped') | list | length) > 0
+  tags: hifiberry-only
 
 - name: Create list of ids from snapclientservices (current service list)
   ansible.builtin.set_fact:
@@ -112,13 +125,13 @@
     label: "{{ item.path }}"
 
 - name: Print list of files that we leave as is
-  ansible.builtin.debug: 
+  ansible.builtin.debug:
     msg: "file for configured {{ item }} found, leaving untouched for now"
-  loop: "{{ idlistfromfiles | default ([]) }}" 
+  loop: "{{ idlistfromfiles | default ([]) }}"
   when: "item in idlistfromconfig"
 
 - name: Remove files that are not configured (any more)
-  ansible.builtin.file: 
+  ansible.builtin.file:
     path: "/etc/snapclient.conf.d/{{ item }}.conf"
     state: absent
   loop: "{{ idlistfromfiles | default ([]) }}"
@@ -144,15 +157,3 @@
     dest: /etc/systemd/system/snapclient@.service
     backup: no
   notify: Restart snapclients
-
-- name: Enable and start snapclient@ services
-  ansible.builtin.systemd:
-    name: "snapclient@{{ item.name }}.service"
-    enabled: yes
-    daemon_reload: yes
-    state: started
-    masked: no
-  loop: "{{ snapclient_config }}"
-  loop_control:
-    label: "{{ item.name }}"
-  ignore_errors: "{{ ansible_check_mode }}"
