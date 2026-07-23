@@ -67,6 +67,7 @@ jobs:
       - name: Run molecule
         run: molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
         env:
+          MOLECULE_DEBUG: "true"
           MOLECULE_DISTRO: ${{ matrix.distro }}
           MOLECULE_IMAGE: ${{ matrix.image }}
           PROVISIONER_SKIP_TAGS: ${{ steps.trust.outputs.runs_on_pi == 'true' && 'tag-does-not-exist' || 'hifiberry-only' }}
