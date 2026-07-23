@@ -3,6 +3,7 @@ driver:
   name: docker
 provisioner:
   name: ansible
+  log: true
   config_options:
     defaults:
       roles_path: ../../roles

@@ -33,7 +33,6 @@ jobs:
         include:
           - distro: debian12
             image: geerlingguy/docker-debian12-ansible:latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -63,9 +62,10 @@ jobs:
         if: steps.trust.outputs.runs_on_pi == 'true'
         run: echo "/home/pi/.local/bin" >> $GITHUB_PATH
 
-      # Run molecule conditionally parametrized
+      # Run molecule conditionally parametrized, showing the generated command lines
       - name: Run molecule
-        run: molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
+        run: molecule --debug --base-config molecule/config.yml test -s ${{ matrix.scenario }}
+
         env:
           MOLECULE_DEBUG: "true"
           MOLECULE_DISTRO: ${{ matrix.distro }}
