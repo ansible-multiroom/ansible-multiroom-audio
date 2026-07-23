@@ -1,4 +1,4 @@
-name: Run molecule
+name: Run molecule test suite
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,13 +12,17 @@ on:
 
 jobs:
   molecule-test:
-    name: Molecule Test (${{ github.actor == 'dependabot[bot]' && 'Github' || 'Hifiberry' }})
+    name: Molecule Test (${{ github.repository == 'ansible-multiroom/ansible-multiroom-audio' && 'Hifiberry' || 'Github' }})
+
     if: |
       github.event_name == 'push' ||
       github.event_name == 'pull_request'
+
     runs-on: >-
-      ${{ github.actor == 'dependabot[bot]' && 'ubuntu-latest' ||
-          fromJSON('["self-hosted", "linux", "ARM64", "hifiberry"]') }}
+      ${{ github.repository == 'ansible-multiroom/ansible-multiroom-audio'
+          && fromJSON('["self-hosted", "linux", "ARM64", "hifiberry"]')
+          || 'ubuntu-latest' }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -29,33 +33,44 @@ jobs:
         include:
           - distro: debian12
             image: geerlingguy/docker-debian12-ansible:latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
 
-      - name: Setup python (only on Github)
-        if: github.actor == 'dependabot[bot]'
+      - name: Save target runner so that later code is easier to read
+        id: trust
+        run: |
+          if [ "${{ github.repository }}" = "ansible-multiroom/ansible-multiroom-audio" ]; then
+            echo "runs_on_pi=true" >> $GITHUB_OUTPUT
+          else
+            echo "runs_on_pi=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install python on Github runner
+        if: steps.trust.outputs.runs_on_pi == 'false'
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      - name: Install Molecule and Dependencies (only on Github)
-        if: github.actor == 'dependabot[bot]'
+      - name: Install Molecule and Dependencies on Github Runner
+        if: steps.trust.outputs.runs_on_pi == 'false'
         run: |
           python -m pip install --upgrade pip
           pip install "molecule[docker]" "molecule-plugins[docker]" ansible-lint
 
-      - name: Add binary path to the runner (only on Raspberry)
-        if: github.actor != 'dependabot[bot]'
+      - name: Add path to pre-installed software on self-hosted runner
+        if: steps.trust.outputs.runs_on_pi == 'true'
         run: echo "/home/pi/.local/bin" >> $GITHUB_PATH
 
+      # Run molecule conditionally parametrized
       - name: Run molecule
         run: molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
         env:
-          PROVISIONER_SKIP_TAGS: ${{ github.actor == 'dependabot[bot]' && 'hifiberry-only' || 'tag-does-not-exist' }}
-          PLATFORMS_NETWORK_MODE: ${{ github.actor == 'dependabot[bot]' && 'bridge' || 'host' }} 
-          PLATFORMS_PRIVILEGED: ${{ github.actor == 'dependabot[bot]' && 'false' || 'true' }}
-          PLATFORMS_SND_DEV_PATH: ${{ github.actor == 'dependabot[bot]' && '/tmp/dummy-snd' || '/dev/snd' }}
-          PLATFORMS_SYSTEM_DBUS_SOCKET: ${{ github.actor == 'dependabot[bot]' && '/tmp/dummy-dbus' || '/var/run/dbus/system_bus_socket' }}
           MOLECULE_DISTRO: ${{ matrix.distro }}
           MOLECULE_IMAGE: ${{ matrix.image }}
+          PROVISIONER_SKIP_TAGS: ${{ steps.trust.outputs.runs_on_pi == 'true' && 'tag-does-not-exist' || 'hifiberry-only' }}
+          PLATFORMS_NETWORK_MODE: ${{ steps.trust.outputs.runs_on_pi == 'true' && 'host' || 'bridge' }}
+          PLATFORMS_PRIVILEGED: ${{ steps.trust.outputs.runs_on_pi == 'true' && 'true' || 'false' }}
+          PLATFORMS_SND_DEV_PATH: ${{ steps.trust.outputs.runs_on_pi == 'true' && '/dev/snd' || '/tmp/dummy-snd' }}
+          PLATFORMS_SYSTEM_DBUS_SOCKET: ${{ steps.trust.outputs.runs_on_pi == 'true' && '/var/run/dbus/system_bus_socket' || '/tmp/dummy-dbus' }}
