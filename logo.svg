@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" fill="#ffffff"/>
+
+<defs>
+
+  <g id="driver">
+    <!-- radii: 130 / 120 / 110 / 45 -->
+    <circle cx="0" cy="0" r="130" fill="#ffffff"/>
+    <circle cx="0" cy="0" r="120" fill="currentColor"/>
+    <circle cx="0" cy="0" r="110" fill="#ffffff"/>
+    <circle cx="0" cy="0" r="45" fill="currentColor"/>
+  </g>
+
+  <g id="speaker">
+    <rect width="300" height="520" fill="currentColor"/>
+
+    <g transform="translate(150 120) scale(0.60)">
+      <use href="#driver"/>
+    </g>
+
+    <g transform="translate(150 370)">
+      <use href="#driver"/>
+    </g>
+
+  </g>
+
+</defs>
+
+<g style="color:#F4CCAF" transform="translate(470 110)">
+  <use href="#speaker"/>
+</g>
+
+<g style="color:#CCB7F8" transform="translate(400 160)">
+  <use href="#speaker"/>
+</g>
+
+<g style="color:#F47A20" transform="translate(330 210)">
+  <use href="#speaker"/>
+</g>
+
+<g style="color:#A56DFF" transform="translate(260 260)">
+  <use href="#speaker"/>
+</g>
+
+</svg>

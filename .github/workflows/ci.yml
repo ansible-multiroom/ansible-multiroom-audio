@@ -37,7 +37,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v5
 
-      - name: Save target runner so that later code is easier to read
+      - name: Save computed target runner to simplify code below
         id: trust
         run: |
           if [ "${{ github.repository }}" = "ansible-multiroom/ansible-multiroom-audio" ]; then
@@ -64,7 +64,7 @@ jobs:
 
       # Run molecule conditionally parametrized, showing the generated command lines
       - name: Run molecule
-        run: molecule --debug --base-config molecule/config.yml test -s ${{ matrix.scenario }}
+        run: molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
 
         env:
           MOLECULE_DEBUG: "true"
