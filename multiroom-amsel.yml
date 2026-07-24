@@ -19,7 +19,7 @@
   roles:
     - base
     - snapclient
-  tags: 
+  tags:
     - feature::base
     - molecule::snapclient
 
@@ -32,7 +32,7 @@
   roles:
     - acable
     - bluetooth_sink
-  tags: 
+  tags:
     - feature::acable
     - molecule::cabling
 
@@ -41,7 +41,7 @@
   become: true
   roles:
     - bluetooth_disable
-  tags: 
+  tags:
     - feature::acable
     - molecule::cabling
 
@@ -51,7 +51,7 @@
   roles:
     - snd_aloop
     - snapserver
-  tags: 
+  tags:
     - feature::small_server
     - molecule::small_server
 
@@ -66,6 +66,6 @@
     - ampd
     - mpdutils
     - raspotify
-  tags: 
+  tags:
     - feature::server
     - molecule::server
