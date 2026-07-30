@@ -11,7 +11,7 @@ This is my first attempt to test my ansible code with molecule. As I know this p
 
 There are currently three different environments for molecule tests supported (architecture names taken from `uname -m`):
 * manual test locally on your workstation (architecture `x86_64`)
-* automated test on github in a ubuntu container (architecture: `x86_64`)
+* automated test on github in a github provided ubuntu container (architecture: `x86_64`)
 * automated test on github on a self-hosted raspberry pi runner (architecture `aarch64`)
 
 Instructions to execute the local tests are given below. Automated tests are driven by `.github/workflows/ci.yml`. The setup is explained in more detail further down.
