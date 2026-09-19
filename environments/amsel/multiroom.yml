@@ -14,7 +14,7 @@
 ### base/snapclient
 
 - name: Run base and snapclient role on all hosts
-  hosts: amsel_all
+  hosts: all
   become: true
   roles:
     - base
@@ -27,7 +27,7 @@
 # uses the variable acable_config that is built in the acable role only.
 
 - name: Configure audio connections
-  hosts: amsel_adc_aloop:amsel_adc_dac:amsel_bluetooth_aloop:amsel_bluetooth_dac
+  hosts: adc_aloop:adc_dac:bluetooth_aloop:bluetooth_dac
   become: true
   roles:
     - acable
@@ -37,7 +37,7 @@
     - molecule::cabling
 
 - name: Disable bluetooth as no acable is defined
-  hosts: amsel_all:!amsel_adc_aloop:!amsel_adc_dac:!amsel_bluetooth_aloop:!amsel_bluetooth_dac
+  hosts: all:!adc_aloop:!adc_dac:!bluetooth_aloop:!bluetooth_dac
   become: true
   roles:
     - bluetooth_disable
@@ -46,7 +46,7 @@
     - molecule::cabling
 
 - name: Configure small audio server (only snapserver)
-  hosts: amsel_small_server
+  hosts: small_server
   become: true
   roles:
     - snd_aloop
@@ -56,7 +56,7 @@
     - molecule::small_server
 
 - name: Configure full audio server (including mpd, raspotify)
-  hosts: amsel_server
+  hosts: server
   become: true
   roles:
     - snd_aloop

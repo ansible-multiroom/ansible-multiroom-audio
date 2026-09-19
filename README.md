@@ -1,7 +1,7 @@
 # ansible-multiroom-audio
 This collection is being used to maintain (at least) three quite different multiroom audio setups based on Raspberry Pi and high quality audio HATs. We use [hifiberry](https://www.hifiberry.com/), but this works with any supported audio HAT. We are happy to hear from anyone else being successful using these roles.
 
-## Features 
+## Features
 
 The roles support setting up an audio multiroom system from a collection of Raspberry Pis. We try to make available all audio sources, so you can
 
@@ -16,30 +16,30 @@ As a side product, it is also possible with these roles to create a standalone m
 
 ### Audio Hardware Limitations
 
-Hardware audio sources and sinks need to be **driven individually**, so that we can receive audio from the analog input, digitize it, stream it synchronously 
-over the network to (all other clients and) the local client that sends the audio to the analog output. This will have some delay,  but exactly the same delay 
-as all other networked clients. On the other hand, a soundcard has one global digital clock for all inputs/outputs. Therefore, we use only one digital audio 
-format in all components and set that format explicitly wherever possible. This also minimizes the CPU load (and audio quality loss) for unwanted format 
+Hardware audio sources and sinks need to be **driven individually**, so that we can receive audio from the analog input, digitize it, stream it synchronously
+over the network to (all other clients and) the local client that sends the audio to the analog output. This will have some delay,  but exactly the same delay
+as all other networked clients. On the other hand, a soundcard has one global digital clock for all inputs/outputs. Therefore, we use only one digital audio
+format in all components and set that format explicitly wherever possible. This also minimizes the CPU load (and audio quality loss) for unwanted format
 conversions.
 
-ALSA **dmix** devices can be used to mix multiple streams together (provided that all streams have the same digital audio format) without any conversion. 
+ALSA **dmix** devices can be used to mix multiple streams together (provided that all streams have the same digital audio format) without any conversion.
 **dsnoop** devices can be used to consume the same audio stream by multiple recorders. `dmix`/`dsnoop` devices proved to be very useful, but they are
 apparently not usable for `alsaloop` as sinks/sources.
 
-In order to support multiple audio inputs and mix them with a `dmix` device, we use the **snd_aloop** 
-kernel module. This creates a virtual soundcard and whatever you stream to `dmix:CARD=Loopback,DEV=0` comes out of `device=dsnoop:CARD=Loopback,DEV=1` 
+In order to support multiple audio inputs and mix them with a `dmix` device, we use the **snd_aloop**
+kernel module. This creates a virtual soundcard and whatever you stream to `dmix:CARD=Loopback,DEV=0` comes out of `device=dsnoop:CARD=Loopback,DEV=1`
 (and 1->2 and 2->3 etc). To make that work without any audio stuttering or other issues, the default audio format for `dmix`/`dsnoop` has to be set
 in `/etc/asound.conf`.
 
-### Design Goals 
+### Design Goals
 Implementation on Pi
 
-* minimal: e.g. use only ALSA 
+* minimal: e.g. use only ALSA
 * generic: use all interfaces without limitations (e.g. a node can be both source and sink)
 
 Ansible implementation
 
-* support a wide range of configurations 
+* support a wide range of configurations
 * roles should be generic enough that end users have to supply only
   * an `inventory` mapping Pi hosts to `group_vars`
   * a `playbook` mapping roles to hosts or host groups
@@ -48,7 +48,7 @@ Ansible implementation
 
 # Roles
 
-* base (**TODO** rename) 
+* base
   * Installs and configures the alsa config in /etc/asound.conf, needed as soon as you use `dmix` or `dsnoop` devices. That means always.
 
 * Multiroom (snapcast)
@@ -79,7 +79,7 @@ Ansible implementation
       * bluealsa
         * Installs and configures bluealsa aka [bluez-alsa](https://github.com/Arkq/bluez-alsa), which configures the device as a bluetooth audio sink aka bluetooth loudspeaker
     * Ensures that bluetooth hardware is disabled (using `rfkill`) if not used
-    * **WARNING**: There is still bug [#14](https://github.com/Daenou/ansible-multiroom-audio/issues/14), needs a one time manual intervention. 
+    * **WARNING**: There is still bug [#14](https://github.com/Daenou/ansible-multiroom-audio/issues/14), needs a one time manual intervention.
   * bluetooth_disable
     * Disable bluetooth with `rfkill`. Needed as separate role to handle devices without `acable` at all.
 
@@ -127,42 +127,53 @@ Pi:
   * enable ssh daemon: `touch /boot/ssh`
   * create a valid `/boot/wpa_supplicant.conf` when you need WLAN from the start
   * internal (low quality) audio is disabled in `/boot/config.txt`: `# dtparam=audio=on`
-  * Audio HAT is working and enabled in `/boot/config.txt`. You should see it with `aplay -L`
-  * Change hostname `sed -iBAK -e "s/raspberrypi/NEWHOSTNAME/g" /etc/hostname /etc/hosts`
-  * regenerate sshd keys: `rm -v /etc/ssh/ssh_host_*` and `dpkg-reconfigure openssh-server`
-  * reset machine id: `rm /etc/machine-id`, `systemd-machine-id-setup`
-  * reboot
-  * hard refresh DHCP leases on raspi, e.g. `rm /var/lib/dhcpcd/*.lease*`, `systemctl restart dhcpcd`
+  * Audio HAT is working, you should see it with `aplay -L`. Maybe needs explicit enabling in `/boot/config.txt`.
+  * If you cloned the sd card from an already working raspi:
+    * Change hostname `sed -iBAK -e "s/raspberrypi/NEWHOSTNAME/g" /etc/hostname /etc/hosts`
+    * regenerate sshd keys: `rm -v /etc/ssh/ssh_host_*` and `dpkg-reconfigure openssh-server`
+    * reset machine id: `rm /etc/machine-id`, `systemd-machine-id-setup`
+    * reboot
+    * hard refresh DHCP leases on raspi, e.g. `rm /var/lib/dhcpcd/*.lease*`, `systemctl restart dhcpcd`
   * in some cases, DHCP servers get confused when the same MAC address is seen with a new name while the lease for the old name is still valid. Check and clean up your DHCP server cache.
-* Passwordless ssh login from ansible host to hostname in the inventory file. If you use passwordless login to the user `pi` (and not `root`) append `-u pi` to the command line.
-* Either python2 or python3 for the bluetooth_sink role (a2dp_agent) 
+* Passwordless ssh login from ansible host to hostname in the inventory file. If you use passwordless login to the user `pi` (and not `root`) use the `-u pi` for the `ansible-playbook` command.
+* ~~Either python2 or~~ python3 for the bluetooth_sink role (a2dp_agent)
 
 Your Environment:
 * A mobile phone or a computer to control the snapclient volumes and mpd.
 * A Spotify premium account if you want to use your multiroom system as Spotify speaker.
-* Some pairs of decent loudspeakers (connected directly to `hifiberry` AMP module) or a stereo equipment and a `hifiberry` DAC/ADC module.
+* Some pairs of decent loudspeakers (connected to a `hifiberry` AMP module) or a stereo equipment and a `hifiberry` DAC/ADC module.
 * Hint for connecting a stereo amp: In order to be able to stream a local source (like a turntable) to the multiroom system **and** play it locally with the same delay as all other sinks for a true multiroom experience, your amp needs to have a *tape monitor* (or a *rec selector*) control. Connect the hifiberry cinch output (DAC) to the *tape in*, the hifiberry 3.5mm jack input (ADC) to the *tape rec out* of the amp and setup the internal "wiring" (see e.g. the `amsel_small_server` setup) correctly.
-   
+
 # Howto
 ## Config
-1) Populate the variables in the `host_vars/$HOSTGROUPNAME/main.yml` files with your settings. Checkout `roles/*/defaults/main.yml` to see all variables available.
+1) Create a new environment directory.
+2) Populate the variables in the `environment/$YOURENVIRONMENT/host_vars/$HOSTGROUPNAME/main.yml` files with your settings. Checkout `roles/*/defaults/main.yml` to see all variables available.
+3) Populate the `inventory` file with the `host` or `hostgroup`
+4) Write a playbook
 
-2) Populate the `inventory` file with a `[snapclient]` and `[snapservers]` hostgroup and list all snapclients/servers you want to target
-3) Write a playbook
-
-A working example uses the following files (**TODO** change this before going to ansible galaxy):
-* Playbook: `multiroom-amsel.yml`
-* Inventory: `inventory_amsel`
-* Group vars: `group_vars/amsel*`
+Let you inspire by the files in the `environments` directory, e.g.
+* `amsel`:
+  * Playbook: `multiroom.yml`
+  * Inventory: `inventory`
+  * Group vars: `group_vars/*`
 
 ## Deployment
-(**TODO** change this before going to ansible galaxy)
 
-In the docroot of this repo, do the following (in check mode). 
+In the docroot of this repo, do the following:
+
+Switch to the environment you want to deploy (taking `amsel` here as example):
 
 ```
-ansible-playbook multiroom-amsel.yml --check --diff -u pi -i inventory_amsel
+cd environments/amsel
 ```
 
-* To apply the changes (and not only check), remove `--check` from the command line. 
+Execute the playbook as follows:
+
+```
+ANSIBLE_CONFIG=../../ansible.cfg ansible-playbook multiroom.yml -CD -u pi -i inventory
+```
+
+Notes:
+
+* To apply the changes (and not only check), remove `C` from the command line.
 * If your passwordless login makes you `root` on the Pi (and not `pi`), remove `-u pi` from the command line
