@@ -1,11 +1,14 @@
 ---
-- name: Verify base and snapclient installation
+- name: Verify base and snapclient installation playbook
   hosts: all
   gather_facts: true
   tasks:
     - name: Load default variables defined in base role
       ansible.builtin.include_vars:
         file: ../../roles/base/defaults/main.yml
+    - name: Load dynamic testcase variables for this scenario
+      ansible.builtin.include_vars:
+        file: "{{ target_vars_file }}"
     - name: Render asound.conf locally
       ansible.builtin.template:
         src: ../../roles/base/templates/etc/asound.conf.j2

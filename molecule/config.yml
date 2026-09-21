@@ -10,9 +10,6 @@ provisioner:
   ansible_args:
     - "--skip-tags"
     - "${PROVISIONER_SKIP_TAGS:-hifiberry-only}"
-  inventory:
-    links:
-      group_vars: ${MOLECULE_PROJECT_DIRECTORY}/environments/amsel/group_vars
   env:
     ANSIBLE_FORCE_COLOR: "True"
 dependency:
