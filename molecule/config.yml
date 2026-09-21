@@ -6,13 +6,10 @@ provisioner:
   log: true
   config_options:
     defaults:
-      roles_path: ../../roles
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
   ansible_args:
     - "--skip-tags"
     - "${PROVISIONER_SKIP_TAGS:-hifiberry-only}"
-  inventory:
-    links:
-      group_vars: ../../group_vars
   env:
     ANSIBLE_FORCE_COLOR: "True"
 dependency:
