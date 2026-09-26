@@ -169,3 +169,14 @@ The most interesting steps within *Run Molecule* are
 If one of the steps fails, the pipeline run is failed and you should fix your code and add commits to your pull request until no error happens again. A run on the Raspberry Pi takes at least 4 minutes, so I strongly suggest to run local tests before pushing as this is usually faster.
 
 The pipeline is configured to abort a running job as soon as new one comes in.
+
+# Setup self hosted runner
+
+The following components need to be configured on the runner so that the tests can succeed:
+
+* required software
+   * docker
+   * python and molecule
+   * github runner
+* if possible, move as much of the storage to RAM to make the tests faster and protect the sdcard from wear
+* for integration tests, the `snd_aloop` module must be loaded (as it is done with the `snd_aloop` role, i.e. including `/etc/asound.conf`

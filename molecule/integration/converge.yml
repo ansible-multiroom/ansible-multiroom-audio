@@ -1,0 +1,4 @@
+---
+
+- name: Execute integration playbook
+  ansible.builtin.import_playbook: ../../environments/molecule/integration/playbook.yml
