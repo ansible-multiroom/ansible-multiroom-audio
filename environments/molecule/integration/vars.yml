@@ -1,0 +1,20 @@
+---
+
+#### converge/idempotency role vars
+# base: defaults are ok
+# mpd: defaults are ok: sink is dmix:CARD=Loopback,DEV=0
+# mpdutils: defaults are ok
+# raspotify: defaults are ok, sink is dmix:CARD=Loopback,DEV=0
+
+# from snapserver defaults: snapserver_alsasource: dsnoop:CARD=Loopback,DEV=1
+snapserver_from_github: true
+
+snapclient_config:
+  - name: localhost
+    snapclient_snapserver: localhost
+    snapclient_sink: dmix:CARD=Loopback,DEV=0,SUBDEV=1
+
+#### verify vars
+
+verify_snapclient_snoop_device: dsnoop:CARD=Loopback,DEV=1,SUBDEV=1
+
