@@ -12,7 +12,7 @@ on:
 
 jobs:
   molecule-test:
-    name: Molecule Test (${{ github.repository == 'ansible-multiroom/ansible-multiroom-audio' && 'Hifiberry' || 'Github' }})
+    name: Molecule - ${{ matrix.scenario }} (${{ github.repository == 'ansible-multiroom/ansible-multiroom-audio' && 'Hifiberry' || 'Github' }})
 
     if: |
       github.event_name == 'push' ||
@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         scenario:
+          - default
           - integration
         distro:
           - debian12
@@ -64,7 +65,13 @@ jobs:
 
       # Run molecule conditionally parametrized, showing the generated command lines
       - name: Run molecule
-        run: molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
+        run: |
+          CURRENT_ARCH=$(uname -m)
+          if [ "${{ matrix.scenario }}" = "integration" ] && [ "$CURRENT_ARCH" != "aarch64" ]; then
+            echo "Not running 'integration' on $CURRENT_ARCH)"
+            exit 0
+          fi
+          molecule --base-config molecule/config.yml test -s ${{ matrix.scenario }}
 
         env:
           MOLECULE_DEBUG: "true"
@@ -75,3 +82,8 @@ jobs:
           PLATFORMS_PRIVILEGED: ${{ steps.trust.outputs.runs_on_pi == 'true' && 'true' || 'false' }}
           PLATFORMS_SND_DEV_PATH: ${{ steps.trust.outputs.runs_on_pi == 'true' && '/dev/snd' || '/tmp/dummy-snd' }}
           PLATFORMS_SYSTEM_DBUS_SOCKET: ${{ steps.trust.outputs.runs_on_pi == 'true' && '/var/run/dbus/system_bus_socket' || '/tmp/dummy-dbus' }}
+
+      - name: Cleanup caches
+        run: |
+          docker system prune -f
+          docker rmi molecule_local/geerlingguy/docker-debian12-ansible:latest || true

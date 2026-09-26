@@ -3,6 +3,7 @@
 platforms:
   - name: integration-platform
     image: "${MOLECULE_IMAGE:-geerlingguy/docker-debian12-ansible:latest}"
+    pre_build_image: true
     command: "${MOLECULE_COMMAND:-/lib/systemd/systemd}"
     override_command: false
     cgroupns_mode: host

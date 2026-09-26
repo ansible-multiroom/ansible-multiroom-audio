@@ -55,6 +55,11 @@ The following has been tested on ubuntu2404 on `x86_64`
 #### Run a test scenario
 
 Change into the repo dir and activate the `venv` created above
+
+**TLDR**: Just run `./run-molecule.sh`
+
+Long version:
+
 ~~~
 cd <local repo dir>
 source ~/.venv/molecule/bin/activate
@@ -179,4 +184,11 @@ The following components need to be configured on the runner so that the tests c
    * python and molecule
    * github runner
 * if possible, move as much of the storage to RAM to make the tests faster and protect the sdcard from wear
+* create a global `/etc/ansible/ansible.cfg`:
+~~~
+[defaults]
+local_tmp         = /tmp/.ansible/tmp
+remote_tmp        = /tmp/.ansible/tmp
+ansible_async_dir = /tmp/.ansible_async
+~~~
 * for integration tests, the `snd_aloop` module must be loaded (as it is done with the `snd_aloop` role, i.e. including `/etc/asound.conf`
