@@ -41,7 +41,7 @@
         - name: Wait 2 seconds
           ansible.builtin.pause:
             seconds: 2
-        - name: Capture and analyze frequency on dsnoop loopback device
+        - name: Capture and analyze frequency on dsnoop loopback device - default volume
           ansible.builtin.command: alsabat -f cd -C {{ verify_snapclient_snoop_device }}  -F 440 -n 2s
           register: alsabat_result_10pct
           failed_when: alsabat_result_10pct.rc != 0
@@ -66,7 +66,7 @@
           ansible.builtin.shell: |
             echo '{"id": 1, "jsonrpc": "2.0", "method": "Client.SetVolume", "params": {"id": "{{ ansible_hostname }}", "volume": {"percent": 100, "muted": false}}}' | nc -w 1 localhost 1705
 
-        - name: Capture and analyze frequency on dsnoop loopback device
+        - name: Capture and analyze frequency on dsnoop loopback device - max volume
           ansible.builtin.command: alsabat -f cd -C {{ verify_snapclient_snoop_device }}  -F 440 -n 2s
           register: alsabat_result_100pct
           failed_when: alsabat_result_100pct.rc != 0

@@ -1,6 +1,8 @@
 ---
 driver:
   name: docker
+  options:
+    build_cache: false
 provisioner:
   name: ansible
   log: true
