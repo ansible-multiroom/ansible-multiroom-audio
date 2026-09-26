@@ -4,4 +4,4 @@
   ansible.builtin.import_playbook: verify_snapclient.yml
   vars:
     target_vars_file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/environments/amsel/group_vars/all/main.yml"
-  when: lookup('env', 'MOLECULE_TAG') | default('molecule::snapclient', true) == 'molecule::snapclient'
+  when: lookup('env', 'MOLECULE_TAG') == "" or 'molecule::snapclient' in lookup('env', 'MOLECULE_TAG')

@@ -1,0 +1,30 @@
+---
+
+- name: "basic e2e testing: mpd -> snapserver -> snapclient"
+  hosts: all
+  vars_files: vars.yml
+  pre_tasks:
+    - name: Add 32-bit support to 64bit arm container
+      when: ansible_architecture == 'aarch64'
+      block:
+        - name: Enable 32-bit package support
+          ansible.builtin.command: dpkg --add-architecture armhf
+          changed_when: false
+        - name: Update package index
+          ansible.builtin.apt:
+            update_cache: true
+  roles:
+    - base
+    - mpd
+    - mpdutils
+    - snapserver
+    - snapclient
+
+  post_tasks:
+    - name: wait in converge for release
+      ansible.builtin.wait_for:
+        path: /tmp/continue
+        state: present
+        timeout: 2700
+      delegate_to: localhost
+
