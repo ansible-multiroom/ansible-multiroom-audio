@@ -1,0 +1,95 @@
+---
+
+- name: Verify end2end
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: load variables needed for test case
+      ansible.builtin.include_vars:
+        file: "{{ item }}"
+      loop:
+        - ../../roles/mpd/defaults/main.yml
+        - ../../roles/mpdutils/defaults/main.yml
+        - ../../roles/raspotify/defaults/main.yml
+        - ../../roles/snapserver/defaults/main.yml
+        - ../../roles/snapclient/defaults/main.yml
+        - ../../environments/molecule/integration/vars.yml
+    - name: Copy files needed for testing
+      ansible.builtin.copy:
+        # created with sox -n -r 8000 -b 16 -c 1 -C 8 15sec440hz.flac synth 15 sine 440
+        src: files/15sec440hz.flac
+        dest: "{{ mpd_music_directory }}/testsong1.flac"
+        backup: no
+    - name: Install alsabat and nc
+      ansible.builtin.apt:
+        name:
+          - alsa-utils
+          - netcat-openbsd
+    - name: Do end2end test
+      block:
+        - name: Play testfile
+          ansible.builtin.shell: |
+            set -o pipefail
+            mpc update --wait
+            mpc clear
+            mpc repeat
+            mpc add testsong1.flac
+            mpc play
+          args:
+            executable: /bin/bash
+          changed_when: false
+
+        - name: Wait 2 seconds
+          ansible.builtin.pause:
+            seconds: 2
+
+        - name: wait for release
+          ansible.builtin.wait_for:
+            path: /tmp/continue
+            state: present
+            timeout: 2700
+          delegate_to: localhost
+
+        - name: Capture and analyze frequency on dsnoop loopback device
+          ansible.builtin.command: alsabat -f cd -C {{ verify_snapclient_snoop_device }}  -F 440 -n 2s
+          register: alsabat_result_10pct
+          failed_when: alsabat_result_10pct.rc != 0
+          changed_when: false
+
+        - name: Show hostname
+          ansible.builtin.debug:
+            msg: "ansible_hostname: {{ ansible_hostname }}"
+
+        - name: wait for release
+          ansible.builtin.wait_for:
+            path: /tmp/continue
+            state: present
+            timeout: 2700
+          delegate_to: localhost
+
+        - name: Set snapclient volume to 100
+          ansible.builtin.shell: |
+            echo '{"id": 1, "jsonrpc": "2.0", "method": "Client.SetVolume", "params": {"id": "{{ ansible_hostname }}", "volume": {"percent": 100, "muted": false}}}' | nc -w 1 localhost 1705
+
+        - name: Capture and analyze frequency on dsnoop loopback device
+          ansible.builtin.command: alsabat -f cd -C {{ verify_snapclient_snoop_device }}  -F 440 -n 2s
+          register: alsabat_result_100pct
+          failed_when: alsabat_result_100pct.rc != 0
+          changed_when: false
+
+      always:
+        - name: Stop mpd playback
+          ansible.builtin.shell: |
+            mpc stop
+            mpc clear
+          args:
+            executable: /bin/bash
+          changed_when: false
+          failed_when: false
+
+    - name: wait for release
+      ansible.builtin.wait_for:
+        path: /tmp/continue
+        state: present
+        timeout: 2700
+      delegate_to: localhost
