@@ -1,12 +1,12 @@
 # Goal
 
-As the target of our ansible code is a Raspberry Pi anyway, a self hosted Raspberry Pi runner
+As the target of our ansible code is a Raspberry Pi, a self hosted Raspberry Pi runner
 allows much better testing than testing locally on the development workstation or on a
 standard Github runner (both being an `x86_64` architecture).
 
 However, there are also some drawbacks:
 * A self hosted runner runs in my personal home network and is basically a remote execution device that can be fed with arbitrary code via github. The fact that we need privileged containers so that we can access the soundcard and other hardware makes that risk even bigger. Therefore, great care must be taken to configure both the selection of the target runner and the permissions required to run a test run there.
-* A Raspberry Pi runner is slower than a `x86_64` runner and has less ressources. Some tuning is needed both in the test setup and also the system setup of the runner.
+* A Raspberry Pi runner is slower than a `x86_64` runner and has less ressources. Some tuning is needed both in the test setup and the system setup of the runner.
 
 # Hardware
 
@@ -16,7 +16,7 @@ Choose a stable and fast SD card, **16GB** at least.
 
 # Software
 
-As the Raspberry Pi is already slow, we want to preinstall as much software on the runner so that tests don't need to repeat those steps again and again. 
+As the Raspberry Pi is already slow, we want to preinstall as much software on the runner so that tests don't need to repeat those steps again and again.
 
 ## Required Software
 
@@ -28,8 +28,8 @@ As the Raspberry Pi is already slow, we want to preinstall as much software on t
   dtoverlay=disable-wifi
   ~~~
 
-* `docker`: 
-   * install from `download.docker.com` the following packages (follow one of the install guides to configure the repo correctly etc): 
+* `docker`:
+   * install from `download.docker.com` the following packages (follow one of the install guides to configure the repo correctly etc):
       * docker-ce
       * docker-ce-cli
       * containerd.io
@@ -45,7 +45,7 @@ As the Raspberry Pi is already slow, we want to preinstall as much software on t
      $ python3 -m pip install "molecule[docker]" "molecule-plugins[docker]" ansible-lint --break-system-packages
      ~~~
 * Runner software, start in the GitHub GUI
-   * In the project, choose *Actions* -> *General* -> *Approval for running fork pull request workflows from contributors*: 
+   * In the project, choose *Actions* -> *General* -> *Approval for running fork pull request workflows from contributors*:
      * [x] *Require approval for all external contributors*
      * **THIS IS A VERY IMPORTANT SECURITY SETTING!**
    * In the project, choose *Settings* -> *Actions* -> *Runners* -> *New self hosted runner* -> *Linux* -> *ARM64*
@@ -59,7 +59,16 @@ As the Raspberry Pi is already slow, we want to preinstall as much software on t
          * `sudo ./svc.sh install`
      * And reboot
      * After the reboot, you should see a running service: `systemctl status actions.runner.ansible-multiroom-ansible-multiroom-audio.raspirunner`
-   
+* Ensure that the `snd_aloop module` is loaded, the Loopback soundcard is used by many tests
+    * `/etc/modules-load.d/load_snd_aloop.conf`
+      ~~~
+      snd-aloop
+      ~~~
+    * `/etc/modprobe.d/snd_aloop.conf`
+      ~~~
+      options snd-aloop pcm_substreams=8
+      ~~~
+
 ## Disk tuning
 
 In order to move almost all writes into a RAM Filesystem, I have configured four directories in `/etc/fstab`:
@@ -75,7 +84,7 @@ For the ones in `/home/pi`, you need to **stop the runner service**, then remove
 
 For the ones in `/var/lib`, you need to **stop the docker service**, then remove all data in those directories and then mount them with `mount -a`.
 
-In addition, you have to 
+In addition, you have to
 
 * create a global `/etc/ansible/ansible.cfg` to move the ansible tmp dir into `tmp` which is also a RAM FS:
   ~~~

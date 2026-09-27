@@ -54,9 +54,7 @@ The following has been tested on ubuntu2404 on `x86_64`
 
 #### Run a test scenario
 
-Change into the repo dir and run `./run-molecule.sh`
-
-To do this manually, do the following:
+Change into the repo dir and run `./run-molecule.sh`. This is the simple, automated way. To execute some (or all) of those steps manually, do:
 
 Activate the `venv` created above
 
@@ -83,7 +81,7 @@ To run a single scenario only, run
 molecule --base-config molecule/config.yml test -s default
 ~~~
 
-In order to keep the test/fix cycle short, the tests are separated by using specific tags in the playbook (still WIP):
+In order to keep the test/fix cycle short, tests can be separated by using specific tags in the playbook. Currently, only the first tag is actually used in the `default` scenario:
 
 * `molecule::snapclient` tests the base role and the snapclients
 * `molecule::cabling` tests the internal cabling with the `acable` role as far as possible (not implemented yet)
@@ -93,7 +91,7 @@ In order to keep the test/fix cycle short, the tests are separated by using spec
 To run only a subset of the tests, you can use e.g.:
 
 ~~~
-molecule --base-config molecule/config.yml test -- --tags=molecule::snapclient
+molecule --base-config molecule/config.yml test -s default -- --tags=molecule::snapclient
 ~~~
 
 #### Stages
@@ -139,7 +137,7 @@ to values applicable to `x86_64` testing. So you don't have to care about them a
 
 * `PROVISIONER_SKIP_TAGS`: defaults to `hifiberry-only` so that code that is not testable on `x86_64` is skipped
 * `PLATFORMS_NETWORK_MODE`: defaults to `bridge`. This is safe, but would prevent the test container on the Raspberry Pi from accessing bluetooth
-* `PLATFORMS_PRIVILEGED`: defaults to `false`. This is safe, but would prevent the test container on the Raspberry Pi from accessing bluetooth and the sound card
+* `PLATFORMS_PRIVILEGED`: defaults to `false`. This is safe, but would prevent the test container on the Raspberry Pi from accessing bluetooth and a sound card
 * `PLATFORMS_SND_DEV_PATH`: default to `/tmp/dummy-snd`. This is safe for the test container, but needs a different setting on the Raspberry Pi to access the real sound card.
 * `PLATFORMS_SYSTEM_DBUS_SOCKET`: defaults to `/tmp/dummy-dbus`. Needs a different value to access the bluetooth hardware on the Raspberry Pi
 
@@ -174,9 +172,8 @@ The most interesting steps within *Run Molecule* are
 
 * `converge`: the application ansible code is executed for the first time and applies all changes to the ephemeral test container and no error should occur.
 * `idempotence`: the code is executed a second time and no changes should be applied any more.
+* `verify`: The code to test the installation.
 
-If one of the steps fails, the pipeline run is failed and you should fix your code and add commits to your pull request until no error happens again. A run on the Raspberry Pi takes at least 4 minutes, so I strongly suggest to run local tests before pushing as this is usually faster.
+If one of the steps fails, the pipeline run is failed and you should fix your code and add commits to your pull request until no error happens again. A run on the Raspberry Pi takes at about 10 minutes, so I strongly suggest to run local tests before pushing as this is usually faster.
 
 The pipeline is configured to abort a running job as soon as new one comes in.
-
-* for integration tests, the `snd_aloop` module must be loaded.
