@@ -23,10 +23,10 @@ As the Raspberry Pi is already slow, we want to preinstall as much software on t
 * Raspberry OS: Take the newest one available and ensure that you can login as user `pi` and need a password to become `root` (not `sudo` without password).
 * verify with `aplay -L` that you see the soundcard you want to test with.
 * disable the onboard audio and (if you don't need it) wifi in `/boot/firmware/config.txt`
-~~~
-# dtparam=audio=on
-dtoverlay=disable-wifi
-~~~
+  ~~~
+  # dtparam=audio=on
+  dtoverlay=disable-wifi
+  ~~~
 
 * `docker`: 
    * install from `download.docker.com` the following packages (follow one of the install guides to configure the repo correctly etc): 
@@ -40,10 +40,10 @@ dtoverlay=disable-wifi
 * `python` and `molecule`
    * as root: `apt install -y python3-pip`
    * as pi:
-~~~
-$ python3 -m pip install --upgrade pip --break-system-packages
-$ python3 -m pip install "molecule[docker]" "molecule-plugins[docker]" ansible-lint --break-system-packages
-~~~
+     ~~~
+     $ python3 -m pip install --upgrade pip --break-system-packages
+     $ python3 -m pip install "molecule[docker]" "molecule-plugins[docker]" ansible-lint --break-system-packages
+     ~~~
 * Runner software, start in the GitHub GUI
    * In the project, choose *Actions* -> *General* -> *Approval for running fork pull request workflows from contributors*: 
      * [x] *Require approval for all external contributors*
@@ -55,7 +55,7 @@ $ python3 -m pip install "molecule[docker]" "molecule-plugins[docker]" ansible-l
          * name: raspirunner
          * additional label: hifiberry
          * work folder: `_work`
-     * Then, create systemd service
+     * Then, create the systemd service
          * `sudo ./svc.sh install`
      * And reboot
      * After the reboot, you should see a running service: `systemctl status actions.runner.ansible-multiroom-ansible-multiroom-audio.raspirunner`
@@ -76,45 +76,47 @@ For the ones in `/home/pi`, you need to **stop the runner service**, then remove
 For the ones in `/var/lib`, you need to **stop the docker service**, then remove all data in those directories and then mount them with `mount -a`.
 
 In addition, you have to 
+
 * create a global `/etc/ansible/ansible.cfg` to move the ansible tmp dir into `tmp` which is also a RAM FS:
-~~~
-[defaults]
-local_tmp  = /tmp/.ansible/tmp
-remote_tmp = /tmp/.ansible/tmp
-async_dir  = /tmp/.ansible_async
-~~~
+  ~~~
+  [defaults]
+  local_tmp  = /tmp/.ansible/tmp
+  remote_tmp = /tmp/.ansible/tmp
+  async_dir  = /tmp/.ansible_async
+  ~~~
 
 * create an override file for the runner (with `systemctl edit ...`):
-~~~
-[Service]
-Environment="ANSIBLE_LOCAL_TEMP=/tmp/.ansible/tmp"
-Environment="ANSIBLE_REMOTE_TEMP=/tmp/.ansible/tmp"
-Environment="ANSIBLE_ASYNC_DIR=/tmp/.ansible_async"
-Environment="MOLECULE_EPHEMERAL_DIRECTORY=/tmp/.cache/molecule"
-~~~
+  ~~~
+  [Service]
+  Environment="ANSIBLE_LOCAL_TEMP=/tmp/.ansible/tmp"
+  Environment="ANSIBLE_REMOTE_TEMP=/tmp/.ansible/tmp"
+  Environment="ANSIBLE_ASYNC_DIR=/tmp/.ansible_async"
+  Environment="MOLECULE_EPHEMERAL_DIRECTORY=/tmp/.cache/molecule"
+  ~~~
 
 * Ensure in the repository `.github/workflows/ci.yml` that the docker space is cleaned up:
-~~~
-- name: Cleanup caches
-  run: |
-    docker system prune -f
-    docker rmi molecule_local/geerlingguy/docker-debian12-ansible:latest || true
-~~~
+  ~~~
+  - name: Cleanup caches
+    run: |
+      docker system prune -f
+      docker rmi molecule_local/geerlingguy/docker-debian12-ansible:latest || true
+  ~~~
 
 * Ensure in the repository `molecule/config.yml` that no build cache is used (this is probably redundant):
-~~~
-driver:
-  name: docker
-  options:
-    build_cache: false
-~~~
+  ~~~
+  driver:
+    name: docker
+    options:
+      build_cache: false
+  ~~~
 
 * Ensure in the repository `/molecule/*/molecule.yml` that we don't need to improve the `geerlingguy` image:
-~~~
-platforms:
-  - name: ...
-    pre_build_image: true
-~~~
+
+  ~~~
+  platforms:
+    - name: ...
+      pre_build_image: true
+  ~~~
 
 * Finally, test that all writes go to a RAM FS during test while running the following command on the runner:
    * `fatrace -t | grep " W "`
