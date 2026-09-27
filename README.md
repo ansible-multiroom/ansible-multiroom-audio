@@ -27,11 +27,11 @@ ALSA **dmix** devices can be used to mix multiple streams together (provided tha
 apparently not usable for `alsaloop` as sinks/sources.
 
 In order to support multiple audio inputs and mix them with a `dmix` device, we use the **snd_aloop**
-kernel module. This creates a virtual soundcard and whatever you stream to `dmix:CARD=Loopback,DEV=0` comes out of `device=dsnoop:CARD=Loopback,DEV=1`
-(and 1->2 and 2->3 etc). To make that work without any audio stuttering or other issues, the default audio format for `dmix`/`dsnoop` has to be set
-in `/etc/asound.conf`.
+kernel module. This creates a virtual soundcard and whatever you stream to `dmix:CARD=Loopback,DEV=0` comes out of `device=dsnoop:CARD=Loopback,DEV=1` and vice versa. The Loopback soundcard has 8 subdevices, so there is also `dmix:CARD=Loopback,DEV=0,SUBDEV=1` and `device=dsnoop:CARD=Loopback,DEV=1,SUBDEV=1` etc. The SUBDEV defaults to 0 btw.
+To make that work without any audio stuttering or other issues, the default audio format for `dmix`/`dsnoop` has to be set in `/etc/asound.conf`.
 
 ### Design Goals
+
 Implementation on Pi
 
 * minimal: e.g. use only ALSA
@@ -104,10 +104,9 @@ Ansible implementation
 
 * Standalone Music Box
   * accesspoint
-    * converts the built in WLAN adapter to a WLAN hotspot. Has no internet connectivity, but enough to control e.g. the volume via a mobile mpd client app. Useful for offline use.
-  * uplink
-    * needs the `accesspoint` role to be executed before
-    * adds simple `firewalld` and `udev` based management of all other network interfaces (on top of the Raspbian default `dhcpcd`). As soon as e.g. the builtin ethernet or an additional WLAN USB dongle has internet connectivity, the `accesspoint` clients will have too.
+    * converts the built in WLAN adapter to a WLAN hotspot. 
+    * Does not need internet connectivity, but the WLAN connection can be used enough to control mpd via a browser or app.
+    * but also adds `firewalld` and `udev` based management of all other network interfaces (on top of the Raspbian default `dhcpcd`). As soon as e.g. the builtin ethernet or an additional WLAN USB dongle has internet connectivity, the `accesspoint` clients will have too.
 
 # Requirements
 Ansible host:
@@ -120,15 +119,15 @@ Ansible host:
 
 Pi:
 
-* Raspbian Bookworm image.
+* Raspbian Bookworm image, not tested for trixie yet.
 * Strongly suggested: The Pis can reach each other using a DNS-Name.
-* Hints after a fresh install / a clone
+* Hints after a fresh install
   * reset password of user `pi`
   * enable ssh daemon: `touch /boot/ssh`
   * create a valid `/boot/wpa_supplicant.conf` when you need WLAN from the start
   * internal (low quality) audio is disabled in `/boot/config.txt`: `# dtparam=audio=on`
   * Audio HAT is working, you should see it with `aplay -L`. Maybe needs explicit enabling in `/boot/config.txt`.
-  * If you cloned the sd card from an already working raspi:
+  * If you **cloned** the sd card from an already working raspi:
     * Change hostname `sed -iBAK -e "s/raspberrypi/NEWHOSTNAME/g" /etc/hostname /etc/hosts`
     * regenerate sshd keys: `rm -v /etc/ssh/ssh_host_*` and `dpkg-reconfigure openssh-server`
     * reset machine id: `rm /etc/machine-id`, `systemd-machine-id-setup`
@@ -156,6 +155,7 @@ Let you inspire by the files in the `environments` directory, e.g.
   * Playbook: `multiroom.yml`
   * Inventory: `inventory`
   * Group vars: `group_vars/*`
+* `camper`: Example for a standalone installation. The bigger the sd card, the bigger you audio library can be.
 
 ## Deployment
 

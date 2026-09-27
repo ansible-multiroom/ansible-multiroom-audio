@@ -1,18 +1,18 @@
 # Motivation
 
-This is my first attempt to test my ansible code with molecule. As I know this playbook quite well, it was a natural approach to introduce molecule here.
+The automated tests should prove that the roles implemented do what they are expected to.
 
 ## Design goals
 
-* enable local testing
-* enable testing in a CI/CD pipeline with as few changes as possible
+* manual testing on the development workstation in a `x86_64` container.
+* automated testing in a CI/CD pipeline
 
 ## Molecule test environments
 
 There are currently three different environments for molecule tests supported (architecture names taken from `uname -m`):
 * manual test locally on your workstation (architecture `x86_64`)
 * automated test on github in a github provided ubuntu container (architecture: `x86_64`)
-* automated test on github on a self-hosted raspberry pi runner (architecture `aarch64`)
+* automated test on github on a self hosted raspberry pi runner (architecture `aarch64`)
 
 Instructions to execute the local tests are given below. Automated tests are driven by `.github/workflows/ci.yml`. The setup is explained in more detail further down.
 
@@ -24,7 +24,7 @@ On `x86_64`, these are not available.
 
 On the self hosted raspberry pi runner, these are mapped into the test container that is built dynamically to run the molecule test.
 
-Note to the admins: As tests showed, this only works on a **privileged** container that has full access to the underlying operating system. Therefore, the Github option *Approval for running fork pull request workflows from contributors* (below *Settings->Actions->General*) must be on **Require approval for all external contributors**. This prevents triggering pipeline runs on the self-hosted runner automatically. Pull requests from outsiders must be carefully reviewed **before approving the CI run** and if there is any change that is not fully understood, the workflow (i.e. testing on Raspberry Pi) **must not be approved**. It is easy to escape from a privileged container.
+Note to the admins: As tests showed, this only works on a **privileged** container that has full access to the underlying operating system. Therefore, the Github option *Approval for running fork pull request workflows from contributors* (below *Settings->Actions->General*) must be on **Require approval for all external contributors**. This prevents triggering pipeline runs on the self-hosted runner automatically. Pull requests from outsiders must be carefully reviewed **before approving the CI run** and if there is any change that is not fully understood, the workflow (i.e. testing on Raspberry Pi) **must not be approved**. It is easy to escape from a privileged container. See also [github-runner](/docs/infrastructure/github-runner.md).
 
 ## Molecule setup
 
@@ -54,11 +54,11 @@ The following has been tested on ubuntu2404 on `x86_64`
 
 #### Run a test scenario
 
-Change into the repo dir and activate the `venv` created above
+Change into the repo dir and run `./run-molecule.sh`
 
-**TLDR**: Just run `./run-molecule.sh`
+To do this manually, do the following:
 
-Long version:
+Activate the `venv` created above
 
 ~~~
 cd <local repo dir>
@@ -78,8 +78,12 @@ To run a full test cycle, do
 molecule --base-config molecule/config.yml test
 ~~~
 
-All tests run in the same container, but in order to keep the test/fix cycle short,
-the tests are separated by using specific tags in the playbook (still WIP):
+To run a single scenario only, run
+~~~
+molecule --base-config molecule/config.yml test -s default
+~~~
+
+In order to keep the test/fix cycle short, the tests are separated by using specific tags in the playbook (still WIP):
 
 * `molecule::snapclient` tests the base role and the snapclients
 * `molecule::cabling` tests the internal cabling with the `acable` role as far as possible (not implemented yet)
@@ -160,7 +164,7 @@ The variables listed above are set to the exactly same values when the logic sel
 
 ### Checking Pipeline runs
 
-In the gitlab GUI, navigate to *Actions* and you see all past and - if one is still running - the current Pipeline run. Click on one and after a click on *1 job completed* you'll either see **Molecule Test (Hifiberry)** or **Molecule Test (Github)**, depending on whether the test ran on the self-hosted runner or a Gitlab runner. Click on this and you will see the steps (as defined in `ci.yml`).
+In the gitlab GUI, navigate to *Actions* and you see all past and - if one is still running - the current Pipeline run. Click on one and after a click on *1 job completed* you'll either see **Molecule <scenario> (Hifiberry)** or **Molecule <scenario> (Github)**, depending on whether the test ran on the self-hosted runner or a Gitlab runner. Click on this and you will see the steps (as defined in `ci.yml`).
 
 On the Raspberry Pi, `ansible` and `molecule` are preinstalled and can be used (provided the `PATH` is set correctly), on the Github runner we need to install them as Github provides us with a fresh, minimal ubuntu VM for each test run.
 
@@ -175,20 +179,4 @@ If one of the steps fails, the pipeline run is failed and you should fix your co
 
 The pipeline is configured to abort a running job as soon as new one comes in.
 
-# Setup self hosted runner
-
-The following components need to be configured on the runner so that the tests can succeed:
-
-* required software
-   * docker
-   * python and molecule
-   * github runner
-* if possible, move as much of the storage to RAM to make the tests faster and protect the sdcard from wear
-* create a global `/etc/ansible/ansible.cfg`:
-~~~
-[defaults]
-local_tmp         = /tmp/.ansible/tmp
-remote_tmp        = /tmp/.ansible/tmp
-ansible_async_dir = /tmp/.ansible_async
-~~~
-* for integration tests, the `snd_aloop` module must be loaded (as it is done with the `snd_aloop` role, i.e. including `/etc/asound.conf`
+* for integration tests, the `snd_aloop` module must be loaded.
