@@ -10,11 +10,17 @@ on:
     paths-ignore:
       - 'README.md'
       - 'docs/**'
+      - 'environments/**'
+      - '!environments/amsel/**'
+      - '!environments/molecule/**'
   pull_request:
     branches: main
     paths-ignore:
       - 'README.md'
       - 'docs/**'
+      - 'environments/**'
+      - '!environments/amsel/**'
+      - '!environments/molecule/**'
 
 jobs:
   molecule-test:
